@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Urgancı Town</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{width:100%;height:100%;overflow:hidden;background:#87CEEB;display:flex;align-items:center;justify-content:center;touch-action:none;font-family:'Courier New',monospace;}
+#gc{position:relative;width:100vw;height:100vh;max-width:480px;overflow:hidden;}
+#cv{position:absolute;top:0;left:0;width:100%;height:100%;}
+#score{position:absolute;top:14px;left:50%;transform:translateX(-50%);font-size:32px;font-weight:900;color:#fff;text-shadow:3px 3px 0 #000;display:none;z-index:5;letter-spacing:3px;}
+#drillHud{position:absolute;bottom:14px;right:14px;display:none;background:rgba(100,20,180,0.92);border-radius:20px;padding:5px 14px;color:#fff;font-size:12px;font-weight:700;z-index:5;align-items:center;gap:5px;}
+.dd{width:11px;height:11px;border-radius:50%;background:#fff;display:inline-block;transition:opacity .2s;}
+.dd.used{opacity:.15;}
+
+/* MENU */
+#menu{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:14px;}
+#menuBg{position:absolute;inset:0;width:100%;height:100%;}
+.mT{z-index:1;text-align:center;}
+.mT h1{font-size:clamp(24px,7vw,34px);font-weight:900;color:#FFD700;text-shadow:3px 3px 0 #7a5500;letter-spacing:4px;}
+.mT p{color:#eee;font-size:10px;letter-spacing:2px;margin-top:3px;}
+.cRow{display:flex;gap:8px;z-index:1;width:100%;}
+.cCard{flex:1;display:flex;flex-direction:column;align-items:center;background:rgba(0,0,0,0.65);border:2px solid rgba(255,255,255,0.2);border-radius:10px;padding:10px 5px 8px;cursor:pointer;transition:all .2s;}
+.cCard.sel{border-color:#FFD700;background:rgba(255,215,0,0.15);}
+.cCard:active{transform:scale(0.96);}
+.cCv{display:block;image-rendering:pixelated;width:64px;height:76px;margin-bottom:5px;}
+.cN{font-size:12px;font-weight:900;color:#FFD700;margin-bottom:2px;}
+.cD{font-size:8.5px;color:#ddd;line-height:1.4;text-align:center;}
+.cT{display:inline-block;margin-top:4px;padding:2px 8px;border-radius:20px;font-size:8px;font-weight:900;}
+.tf{background:#e53935;color:#fff;}.ts{background:#2e7d32;color:#fff;}.td{background:#6a1b9a;color:#fff;}
+#sBtn{z-index:1;width:100%;padding:14px;background:#FFD700;color:#1a0a00;border:none;border-radius:30px;font-size:17px;font-weight:900;cursor:pointer;letter-spacing:3px;font-family:'Courier New',monospace;}
+#sBtn:active{background:#e6c000;transform:scale(0.98);}
+
+/* GAME OVER */
+#go{position:absolute;inset:0;background:rgba(0,0,0,.85);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:20;gap:10px;}
+#go h2{font-size:36px;font-weight:900;color:#ff4757;text-shadow:3px 3px 0 #000;letter-spacing:3px;}
+.gs{font-size:20px;color:#fff;}.gb2{font-size:13px;color:#888;}
+.gBs{display:flex;gap:10px;margin-top:10px;}
+.gB{padding:12px 24px;border-radius:30px;border:none;font-size:13px;font-weight:900;cursor:pointer;font-family:'Courier New',monospace;touch-action:manipulation;}
+.gB:active{transform:scale(0.95);}
+#rB{background:#FFD700;color:#1a0a00;}#mB{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.2);}
+</style>
+</head>
+<body>
+<div id="gc">
+  <canvas id="cv"></canvas>
+  <div id="score">0</div>
+  <div id="drillHud" style="display:none;align-items:center;">💥 <span class="dd" id="d0"></span><span class="dd" id="d1"></span><span class="dd" id="d2"></span></div>
+
+  <div id="menu">
+    <canvas id="menuBg"></canvas>
+    <div class="mT"><h1>URGANCI TOWN</h1><p>KARAKTER SEÇ VE UÇ!</p></div>
+    <div class="cRow">
+      <div class="cCard sel" onclick="pick('fast',this)">
+        <canvas class="cCv" id="p0" width="64" height="76"></canvas>
+        <div class="cN">EMRAH</div>
+        <div class="cD">Çok hızlı,<br>kontrol zor.</div>
+        <span class="cT tf">⚡ HIZLI</span>
+      </div>
+      <div class="cCard" onclick="pick('slow',this)">
+        <canvas class="cCv" id="p1" width="64" height="76"></canvas>
+        <div class="cN">SERDAR</div>
+        <div class="cD">Yavaş & sakin,<br>kolay kontrol.</div>
+        <span class="cT ts">🐢 YAVAŞ</span>
+      </div>
+      <div class="cCard" onclick="pick('drill',this)">
+        <canvas class="cCv" id="p2" width="64" height="76"></canvas>
+        <div class="cN">OKAN</div>
+        <div class="cD">3 kez bina<br>deler geçer!</div>
+        <span class="cT td">💥 DELİCİ</span>
+      </div>
+    </div>
+    <button id="sBtn" onclick="startGame()">▶ BAŞLAT</button>
+  </div>
+
+  <div id="go">
+    <h2>OYUN BİTTİ!</h2>
+    <div class="gs" id="gSc">Skor: 0</div>
+    <div class="gb2" id="gBt">En İyi: 0</div>
+    <div class="gBs">
+      <button class="gB" id="rB" onclick="retry()">TEKRAR</button>
+      <button class="gB" id="mB" onclick="goMenu()">MENÜ</button>
+    </div>
+  </div>
+</div>
+<script>
+const gc=document.getElementById('gc');
+const cv=document.getElementById('cv');
+const ctx=cv.getContext('2d');
+let GW,GH;
+
+function resize(){
+  GW=gc.clientWidth; GH=gc.clientHeight;
+  cv.width=GW; cv.height=GH;
+  const mb=document.getElementById('menuBg');
+  mb.width=GW; mb.height=GH;
+  drawMenuBg();
+}
+window.addEventListener('resize',resize);
+
+// ═══════════════════════════════
+// SPRITE MAKER — 16×19 grid @ 4px
+// ═══════════════════════════════
+function makeSprite(type){
+  const oc=document.createElement('canvas');
+  oc.width=64; oc.height=76;
+  const ox=oc.getContext('2d');
+  ox.imageSmoothingEnabled=false;
+  const S=4;
+  function p(c,r,col){ox.fillStyle=col;ox.fillRect(c*S,r*S,S,S);}
+  function R(c1,r1,c2,r2,col){for(let r=r1;r<=r2;r++)for(let c=c1;c<=c2;c++)p(c,r,col);}
+
+  if(type==='fast'){ // EMRAH kel
+    const SK='#F5B48A';
+    R(4,0,11,0,SK);p(6,0,'#FFD8B0');p(8,0,'#FFD8B0'); // kel parlama
+    R(3,1,12,4,SK);p(2,2,SK);p(13,2,SK);p(2,3,SK);p(13,3,SK);
+    R(4,5,11,5,SK);
+    p(4,2,'#7A5030');p(5,2,'#7A5030');p(10,2,'#7A5030');p(11,2,'#7A5030'); // kaş
+    p(4,3,'#111');p(5,3,'#fff');p(9,3,'#111');p(10,3,'#fff'); // gözler
+    p(7,4,'#D4936A');p(8,4,'#D4936A'); // burun
+    p(5,5,'#c06040');p(6,5,'#c06040');p(7,5,'#c06040');p(8,5,'#c06040');p(9,5,'#c06040'); // ağız
+    p(3,4,'#FFB090');p(12,4,'#FFB090'); // yanak
+    p(7,6,SK);p(8,6,SK); // boyun
+    R(2,7,13,11,'#E53935'); // tişört
+    R(7,7,8,7,SK); // yaka
+    R(0,8,1,10,'#E53935');R(14,8,15,10,'#E53935'); // kollar
+    p(0,9,SK);p(15,9,SK); // eller
+    R(3,12,12,14,'#1565C0'); // pantolon
+    R(7,12,8,14,'#0D47A1');
+    R(3,15,5,16,'#1565C0');R(10,15,12,16,'#1565C0'); // bacak
+    R(2,17,6,18,'#222');R(9,17,13,18,'#222'); // ayakkabı
+  }
+
+  if(type==='slow'){ // SERDAR siyah saç sakal
+    const SK='#D4956A';
+    R(4,0,11,0,'#111');R(3,1,12,1,'#111');p(2,1,'#111');p(13,1,'#111'); // saç
+    R(3,2,12,5,SK);p(2,3,SK);p(13,3,SK);p(2,4,SK);p(13,4,SK);
+    R(4,6,11,7,SK);
+    p(4,3,'#222');p(5,3,'#222');p(10,3,'#222');p(11,3,'#222'); // kaş
+    p(4,4,'#111');p(5,4,'#ddd');p(9,4,'#111');p(10,4,'#ddd'); // gözler
+    p(7,4,'#B07050');p(8,4,'#B07050'); // burun
+    R(3,6,12,7,'#111'); // sakal
+    p(7,6,'#8B3020');p(8,6,'#8B3020'); // ağız
+    p(7,8,SK);p(8,8,SK); // boyun
+    R(4,9,11,13,'#2E7D32'); // tişört
+    R(7,9,8,9,SK);
+    R(2,9,3,11,'#2E7D32');R(12,9,13,11,'#2E7D32');
+    p(1,10,SK);p(14,10,SK);
+    R(4,14,11,16,'#3a3a5a');R(7,14,8,16,'#2a2a4a'); // pantolon
+    R(4,17,6,18,'#3a3a5a');R(9,17,11,18,'#3a3a5a');
+    R(3,19,7,19,'#111');R(8,19,12,19,'#111');
+  }
+
+  if(type==='drill'){ // OKAN kumral saç kızıl sakal
+    const SK='#E8A87C';
+    R(4,0,11,0,'#8B5E3C');p(5,0,'#A0723A');p(9,0,'#A0723A'); // kumral saç
+    R(3,1,12,1,'#8B5E3C');p(2,1,'#8B5E3C');p(13,1,'#8B5E3C');
+    R(3,2,12,5,SK);p(2,3,SK);p(13,3,SK);p(2,4,SK);p(13,4,SK);
+    R(4,6,11,7,SK);
+    p(4,3,'#8B5E3C');p(5,3,'#8B5E3C');p(10,3,'#8B5E3C');p(11,3,'#8B5E3C'); // kaş
+    p(4,4,'#2c1a0e');p(5,4,'#ddd');p(9,4,'#2c1a0e');p(10,4,'#ddd'); // gözler
+    p(7,4,'#C4906A');p(8,4,'#C4906A'); // burun
+    R(3,6,12,7,'#C0392B'); // kızıl sakal
+    p(7,6,'#8B2020');p(8,6,'#8B2020'); // ağız
+    p(7,8,SK);p(8,8,SK); // boyun
+    R(2,9,13,13,'#6A1B9A'); // mor tişört
+    R(7,9,8,9,SK);
+    p(7,11,'#FF6F00');p(8,11,'#FF9800'); // ateş sembolü
+    R(0,9,1,12,'#6A1B9A');R(14,9,15,12,'#6A1B9A');
+    p(0,10,SK);p(15,10,SK);
+    R(3,14,12,16,'#37474F');R(7,14,8,16,'#263238');
+    R(3,17,6,18,'#37474F');R(9,17,12,18,'#37474F');
+    R(2,19,7,19,'#1a1a1a');R(8,19,13,19,'#1a1a1a');
+    p(0,11,'#FF6F00');p(15,11,'#FF6F00'); // ateş kenar
+  }
+  return oc;
+}
+const SP={fast:makeSprite('fast'),slow:makeSprite('slow'),drill:makeSprite('drill')};
+['p0','p1','p2'].forEach((id,i)=>{
+  const t=['fast','slow','drill'][i];
+  const el=document.getElementById(id);
+  const ex=el.getContext('2d');
+  ex.imageSmoothingEnabled=false;
+  ex.drawImage(SP[t],0,0,64,76);
+});
+
+// ═══════════════════════════════
+// MENU ARKA PLAN — temiz gece şehri
+// ═══════════════════════════════
+function drawMenuBg(){
+  const mb=document.getElementById('menuBg');
+  if(!mb.width)return;
+  const mx=mb.getContext('2d');
+  const W=mb.width,H=mb.height;
+
+  // Gökyüzü — koyu lacivert
+  const g=mx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#04021a');g.addColorStop(0.7,'#080530');g.addColorStop(1,'#0a0840');
+  mx.fillStyle=g;mx.fillRect(0,0,W,H);
+
+  // Yıldızlar
+  for(let i=0;i<80;i++){
+    mx.fillStyle=`rgba(255,255,255,${0.4+i%4*0.15})`;
+    mx.beginPath();mx.arc((i*137)%W,(i*79)%(H*0.6),i%5===0?1.5:0.6,0,Math.PI*2);mx.fill();
+  }
+  // Ay
+  mx.fillStyle='#FFFDE7';mx.beginPath();mx.arc(W*0.82,H*0.1,22,0,Math.PI*2);mx.fill();
+  mx.fillStyle='#04021a';mx.beginPath();mx.arc(W*0.82+9,H*0.1-4,17,0,Math.PI*2);mx.fill();
+
+  // Şehir silueti — düzgün dikdörtgen binalar
+  const ground=H-60;
+  const blds=[
+    {x:0,w:50,h:160},{x:48,w:35,h:110},{x:81,w:55,h:140},
+    {x:134,w:40,h:90},{x:172,w:65,h:170},{x:235,w:45,h:105},
+    {x:278,w:30,h:150},{x:306,w:55,h:120},{x:359,w:40,h:95},
+    {x:397,w:50,h:135},{x:445,w:40,h:100}
+  ];
+  blds.forEach((b,i)=>{
+    const by=ground-b.h;
+    mx.fillStyle=i%3===0?'#080325':i%3===1?'#060218':'#0a0432';
+    mx.fillRect(b.x,by,b.w,b.h);
+    // pencereler
+    for(let r=0;r<Math.floor(b.h/18);r++){
+      for(let c=0;c<Math.floor((b.w-8)/14);c++){
+        const lit=Math.random()>0.35;
+        mx.fillStyle=lit?'rgba(255,230,80,0.55)':'rgba(50,80,180,0.2)';
+        mx.fillRect(b.x+4+c*14,by+6+r*18,9,11);
+      }
+    }
+  });
+  // zemin
+  mx.fillStyle='#030112';mx.fillRect(0,ground,W,H-ground);
+}
+
+// ═══════════════════════════════
+// GAME
+// ═══════════════════════════════
+const CFG={
+  fast:{g:0.58,j:-10.0,s:3.4},
+  slow:{g:0.25,j:-6.5,s:1.9},
+  drill:{g:0.38,j:-8.0,s:2.6}
+};
+let sel='fast',state='menu',score=0,best=0;
+let bird,pipes,parts=[],frame=0,animId,drills=0;
+
+function pick(t,el){
+  sel=t;
+  document.querySelectorAll('.cCard').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+function makeBird(){return{x:GW*0.22,y:GH/2,vy:0,w:44,h:52,c:CFG[sel],t:sel};}
+
+function makePipe(){
+  const gap=Math.max(155,GH*0.28);
+  const minT=80,maxT=GH-gap-80-55;
+  const topH=minT+Math.random()*(maxT-minT);
+  return{x:GW+10,topH,botY:topH+gap,botH:GH-topH-gap-55,w:70,passed:false,tB:false,bB:false};
+}
+
+function startGame(){
+  document.getElementById('menu').style.display='none';
+  document.getElementById('go').style.display='none';
+  document.getElementById('score').style.display='block';
+  const dh=document.getElementById('drillHud');
+  if(sel==='drill'){dh.style.display='flex';drills=3;updDrill();}
+  else dh.style.display='none';
+  score=0;frame=0;bird=makeBird();pipes=[];parts=[];state='playing';
+  document.getElementById('score').textContent='0';
+  cancelAnimationFrame(animId);loop();
+}
+function retry(){document.getElementById('go').style.display='none';startGame();}
+function goMenu(){
+  state='menu';cancelAnimationFrame(animId);
+  document.getElementById('menu').style.display='flex';
+  document.getElementById('go').style.display='none';
+  document.getElementById('score').style.display='none';
+  document.getElementById('drillHud').style.display='none';
+}
+function updDrill(){for(let i=0;i<3;i++)document.getElementById('d'+i).className='dd'+(i>=drills?' used':'');}
+
+// INPUT
+gc.addEventListener('touchstart',e=>{e.preventDefault();if(state==='playing')bird.vy=bird.c.j;},{passive:false});
+gc.addEventListener('click',()=>{if(state==='playing')bird.vy=bird.c.j;});
+document.addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();if(state==='playing')bird.vy=bird.c.j;}});
+
+// ═══════════════════════════════
+// DRAW SKY — güzel açık mavi gündüz
+// ═══════════════════════════════
+function drawSky(){
+  // Gökyüzü — açık mavi
+  const g=ctx.createLinearGradient(0,0,0,GH);
+  g.addColorStop(0,'#1E88E5');
+  g.addColorStop(0.5,'#64B5F6');
+  g.addColorStop(0.51,'#81D4FA');
+  g.addColorStop(0.75,'#B3E5FC');
+  ctx.fillStyle=g;ctx.fillRect(0,0,GW,GH);
+
+  // Güneş
+  ctx.fillStyle='#FFF176';
+  ctx.beginPath();ctx.arc(GW*0.8,GH*0.1,18,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='rgba(255,241,118,0.3)';
+  ctx.beginPath();ctx.arc(GW*0.8,GH*0.1,28,0,Math.PI*2);ctx.fill();
+
+  // Bulutlar (beyaz, net)
+  function cloud(cx,cy,r){
+    ctx.fillStyle='#fff';
+    ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);
+    ctx.arc(cx+r*0.7,cy+r*0.2,r*0.7,0,Math.PI*2);
+    ctx.arc(cx-r*0.6,cy+r*0.25,r*0.6,0,Math.PI*2);
+    ctx.fill();
+  }
+  cloud((frame*0.4)%(GW+160)-80, GH*0.08, 28);
+  cloud((frame*0.4+200)%(GW+160)-80, GH*0.15, 22);
+  cloud((frame*0.4+380)%(GW+160)-80, GH*0.06, 20);
+}
+
+// ═══════════════════════════════
+// DRAW GROUND
+// ═══════════════════════════════
+function drawGround(){
+  ctx.fillStyle='#43A047';ctx.fillRect(0,GH-55,GW,55);
+  ctx.fillStyle='#388E3C';ctx.fillRect(0,GH-55,GW,7);
+  // yol
+  ctx.fillStyle='#546E7A';ctx.fillRect(0,GH-38,GW,20);
+  ctx.fillStyle='#FFD600';
+  for(let i=(frame*2.5%44)-44;i<GW;i+=44)ctx.fillRect(i,GH-29,26,4);
+}
+
+// ═══════════════════════════════
+// DRAW BUILDING — sade, düzgün
+// ═══════════════════════════════
+function drawBuilding(x,w,y,h,isTop,broken){
+  if(h<4)return;
+  ctx.save();
+  if(broken)ctx.globalAlpha=0.2;
+
+  // Bina gövdesi — düz tuğla rengi
+  const FH=30; // kat yüksekliği
+  const floors=Math.max(1,Math.floor(h/FH));
+  for(let f=0;f<floors;f++){
+    const fy=y+f*FH;
+    const fh=Math.min(FH,h-f*FH);
+    if(fh<2)continue;
+    // kat rengi (hafif alternatif)
+    ctx.fillStyle=f%2===0?'#D2956E':'#C4856A';
+    ctx.fillRect(x,fy,w,fh);
+    // kat çizgisi
+    ctx.fillStyle='#A06040';
+    ctx.fillRect(x,fy,w,1);
+    // kenar gölgesi
+    ctx.fillStyle='rgba(0,0,0,0.12)';
+    ctx.fillRect(x,fy,4,fh);
+    ctx.fillRect(x+w-4,fy,4,fh);
+    // pencereler
+    if(fh>=16){
+      const wW=11,wH=13;
+      const cols=Math.max(1,Math.floor((w-10)/(wW+8)));
+      const offX=Math.floor((w-(cols*(wW+8)-8))/2);
+      for(let c=0;c<cols;c++){
+        const wx=x+offX+c*(wW+8);
+        const wy=fy+Math.floor((fh-wH)/2);
+        if(wy+wH>fy+fh-1)continue;
+        // pencere çerçeve
+        ctx.fillStyle='#7A4820';ctx.fillRect(wx-1,wy-1,wW+2,wH+2);
+        // pencere camı
+        const lit=((f*10+c+Math.floor(frame/120))%8)!==0;
+        ctx.fillStyle=lit?'#FFF9C4':'#3949AB';
+        ctx.fillRect(wx,wy,wW,wH);
+        // cam çarpaz
+        ctx.fillStyle='rgba(0,0,0,0.15)';
+        ctx.fillRect(wx+Math.floor(wW/2),wy,1,wH);
+        ctx.fillRect(wx,wy+Math.floor(wH/2),wW,1);
+      }
+    }
+  }
+
+  // Bina üst şeridi
+  ctx.fillStyle='#8B4513';
+  ctx.fillRect(x-2,y-3,w+4,5);
+
+  // URGANCI — sadece ALT binalarda, dikey, ortada
+  if(!isTop && h>60){
+    const letters='URGANCI'.split('');
+    const lh=Math.min(17,Math.floor(h*0.85/letters.length));
+    const sw=lh+5;
+    const totalH=letters.length*lh;
+    const tx=Math.round(x+w/2-sw/2); // tam merkez
+    const sy=Math.round(y+(h-totalH)/2);
+    // gölge
+    ctx.fillStyle='rgba(0,0,0,0.35)';
+    ctx.fillRect(tx+2,sy+2,sw,totalH);
+    // zemin şerit
+    ctx.fillStyle='#B71C1C';
+    ctx.fillRect(tx,sy,sw,totalH);
+    // harfler
+    letters.forEach((lt,i)=>{
+      const ly=sy+i*lh;
+      ctx.fillStyle=i%2===0?'#E53935':'#C62828';
+      ctx.fillRect(tx,ly,sw,lh);
+      ctx.fillStyle='#FFD700';
+      const fs=Math.max(9,lh-5);
+      ctx.font=`900 ${fs}px 'Courier New',monospace`;
+      ctx.textAlign='center';
+      ctx.textBaseline='middle';
+      ctx.fillText(lt,tx+sw/2,ly+lh/2);
+    });
+    // çerçeve
+    ctx.strokeStyle='#FFD700';ctx.lineWidth=1.5;
+    ctx.strokeRect(tx,sy,sw,totalH);
+  }
+
+  ctx.restore();
+}
+
+// ═══════════════════════════════
+// DRAW BIRD
+// ═══════════════════════════════
+function drawBird(b){
+  ctx.save();
+  ctx.imageSmoothingEnabled=false;
+  const tilt=Math.max(-0.45,Math.min(0.45,b.vy*0.06));
+  ctx.translate(b.x,b.y);ctx.rotate(tilt);
+  ctx.drawImage(SP[b.t],-b.w/2,-b.h/2,b.w,b.h);
+  if(b.t==='fast'){
+    ctx.globalAlpha=0.4;ctx.fillStyle='#FF5252';
+    ctx.fillRect(-b.w/2-16,-5,14,10);
+    ctx.globalAlpha=0.15;ctx.fillRect(-b.w/2-28,-4,10,8);
+    ctx.globalAlpha=1;
+  }
+  if(b.t==='drill'&&drills>0){
+    const pulse=Math.sin(frame*0.25)*0.3+0.7;
+    ctx.globalAlpha=pulse;ctx.fillStyle='#FF6F00';
+    ctx.beginPath();ctx.arc(b.w/2+6,0,8,0,Math.PI*2);ctx.fill();
+    ctx.globalAlpha=1;
+  }
+  ctx.restore();
+}
+
+// Parçacıklar
+function spawnP(x,w,y,h){
+  for(let i=0;i<20;i++)parts.push({
+    x:x+Math.random()*w,y:y+Math.random()*Math.min(h,60),
+    vx:(Math.random()-.5)*7,vy:(Math.random()-.85)*8,
+    sz:5+Math.random()*8,
+    col:['#C4856A','#B07055','#8B4513','#FFD700','#FF6F00','#fff'][Math.floor(Math.random()*6)],
+    life:1,rot:Math.random()*6.28,rv:(Math.random()-.5)*0.3
+  });
+}
+function drawP(){
+  parts=parts.filter(p=>p.life>0);
+  parts.forEach(p=>{
+    p.x+=p.vx;p.y+=p.vy;p.vy+=0.4;p.life-=0.03;p.rot+=p.rv;
+    ctx.save();ctx.globalAlpha=p.life;ctx.translate(p.x,p.y);ctx.rotate(p.rot);
+    ctx.fillStyle=p.col;ctx.fillRect(-p.sz/2,-p.sz/2,p.sz,p.sz);ctx.restore();
+  });
+}
+
+// Çarpışma
+function hitT(b,p){
+  if(b.x+b.w/2-8<p.x||b.x-b.w/2+8>p.x+p.w)return false;
+  return b.y-b.h/2+8<p.topH;
+}
+function hitB(b,p){
+  if(b.x+b.w/2-8<p.x||b.x-b.w/2+8>p.x+p.w)return false;
+  return b.y+b.h/2-8>p.botY;
+}
+
+// ═══════════════════════════════
+// LOOP
+// ═══════════════════════════════
+function loop(){
+  ctx.clearRect(0,0,GW,GH);
+  frame++;
+  drawSky();
+  if(frame%90===0)pipes.push(makePipe());
+  let died=false;
+  pipes.forEach(p=>{
+    p.x-=bird.c.s;
+    drawBuilding(p.x,p.w,0,p.topH,true,p.tB);
+    drawBuilding(p.x,p.w,p.botY,p.botH,false,p.bB);
+    if(!p.passed&&p.x+p.w<bird.x){p.passed=true;score++;document.getElementById('score').textContent=score;}
+    if(!p.tB&&hitT(bird,p)){
+      if(bird.t==='drill'&&drills>0){p.tB=true;drills--;updDrill();spawnP(p.x,p.w,0,p.topH);}
+      else died=true;
+    }
+    if(!p.bB&&hitB(bird,p)){
+      if(bird.t==='drill'&&drills>0){p.bB=true;drills--;updDrill();spawnP(p.x,p.w,p.botY,p.botH);}
+      else died=true;
+    }
+  });
+  pipes=pipes.filter(p=>p.x+p.w>-10);
+  drawP();
+  bird.vy+=bird.c.g;bird.y+=bird.vy;
+  if(bird.y-bird.h/2<0){bird.y=bird.h/2;bird.vy=0;}
+  if(bird.y+bird.h/2>GH-55)died=true;
+  drawGround();drawBird(bird);
+  if(died){
+    state='gameover';if(score>best)best=score;
+    document.getElementById('gSc').textContent='Skor: '+score;
+    document.getElementById('gBt').textContent='En İyi: '+best;
+    document.getElementById('go').style.display='flex';
+    return;
+  }
+  animId=requestAnimationFrame(loop);
+}
+
+resize();
+</script>
+</body>
+</html>
