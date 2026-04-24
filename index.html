@@ -23,7 +23,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#87CEEB;display:flex
 .cRow{display:flex;gap:8px;z-index:1;width:100%;}
 .cCard{flex:1;display:flex;flex-direction:column;align-items:center;background:rgba(0,0,0,0.65);border:2px solid rgba(255,255,255,0.2);border-radius:10px;padding:10px 5px 8px;cursor:pointer;transition:all .2s;}
 .cCard.sel{border-color:#FFD700;background:rgba(255,215,0,0.15);}
-.cCard:active{transform:scale(0.96);}
+.cCard:active{transform:scale(0.96);} .cCard{-webkit-user-select:none;user-select:none;}
 .cCv{display:block;image-rendering:pixelated;width:64px;height:76px;margin-bottom:5px;}
 .cN{font-size:12px;font-weight:900;color:#FFD700;margin-bottom:2px;}
 .cD{font-size:8.5px;color:#ddd;line-height:1.4;text-align:center;}
@@ -52,26 +52,26 @@ html,body{width:100%;height:100%;overflow:hidden;background:#87CEEB;display:flex
     <canvas id="menuBg"></canvas>
     <div class="mT"><h1>URGANCI TOWN</h1><p>KARAKTER SEÇ VE UÇ!</p></div>
     <div class="cRow">
-      <div class="cCard sel" onclick="pick('fast',this)">
+      <div class="cCard sel" id="c0">
         <canvas class="cCv" id="p0" width="64" height="76"></canvas>
         <div class="cN">EMRAH</div>
         <div class="cD">Çok hızlı,<br>kontrol zor.</div>
         <span class="cT tf">⚡ HIZLI</span>
       </div>
-      <div class="cCard" onclick="pick('slow',this)">
+      <div class="cCard" id="c1">
         <canvas class="cCv" id="p1" width="64" height="76"></canvas>
         <div class="cN">SERDAR</div>
         <div class="cD">Yavaş & sakin,<br>kolay kontrol.</div>
         <span class="cT ts">🐢 YAVAŞ</span>
       </div>
-      <div class="cCard" onclick="pick('drill',this)">
+      <div class="cCard" id="c2">
         <canvas class="cCv" id="p2" width="64" height="76"></canvas>
         <div class="cN">OKAN</div>
         <div class="cD">3 kez bina<br>deler geçer!</div>
         <span class="cT td">💥 DELİCİ</span>
       </div>
     </div>
-    <button id="sBtn" onclick="startGame()">▶ BAŞLAT</button>
+    <button id="sBtn" id="sBtn">▶ BAŞLAT</button>
   </div>
 
   <div id="go">
@@ -79,8 +79,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#87CEEB;display:flex
     <div class="gs" id="gSc">Skor: 0</div>
     <div class="gb2" id="gBt">En İyi: 0</div>
     <div class="gBs">
-      <button class="gB" id="rB" onclick="retry()">TEKRAR</button>
-      <button class="gB" id="mB" onclick="goMenu()">MENÜ</button>
+      <button class="gB" id="rB" id="rB">TEKRAR</button>
+      <button class="gB" id="mB" id="mB">MENÜ</button>
     </div>
   </div>
 </div>
@@ -505,6 +505,22 @@ function loop(){
   }
   animId=requestAnimationFrame(loop);
 }
+
+// MOBİL DOKUNMA — her kart ve buton için
+function addTouch(id, fn){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.addEventListener('touchend', function(e){e.preventDefault();fn(this);}, {passive:false});
+  el.addEventListener('click', function(e){fn(this);});
+}
+
+const types=['fast','slow','drill'];
+['c0','c1','c2'].forEach((id,i)=>{
+  addTouch(id, function(el){ pick(types[i],el); });
+});
+addTouch('sBtn', function(){ startGame(); });
+addTouch('rB', function(){ retry(); });
+addTouch('mB', function(){ goMenu(); });
 
 resize();
 </script>
